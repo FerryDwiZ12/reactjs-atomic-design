@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import Button from "../Elements/Button";
 
 const CardProduct = (props) => {
@@ -6,11 +7,11 @@ const CardProduct = (props) => {
 };
 
 const Header = (props) => {
-  const { image } = props;
+  const { image , id} = props;
   return (
-    <a href='#'>
-      <img src={image} alt='product' className='p-8 rounded-t-lg' />
-    </a>
+    <Link to={`/product/${id}`}>
+      <img src={image} alt='product' className='p-8 rounded-t-lg object-cover w-96 h-96' />
+    </Link>
   );
 };
 
@@ -18,10 +19,10 @@ const Body = (props) => {
   const { children, name } = props;
   return (
     <div className='px-5 pb-5 h-full'>
-      <a href=''>
-        <h5 className='text-xl font-semibold tracking-tight text-white'>{name}</h5>
-        <p className='text-m text-white'>{children}</p>
-      </a>
+      <Link href=''>
+        <h5 className='text-xl font-semibold tracking-tight text-white mb-4'>{name.substring(0,20)} ...</h5>
+        <p className='text-m text-white'>{children.substring(0, 120)}...</p>
+      </Link>
     </div>
   );
 };
@@ -30,7 +31,7 @@ const Footer = (props) => {
   const { price, handleAddToCart, id } = props;
   return (
     <div className='flex items-center justify-between px-5 pb-5'>
-      <span className='text-s font-bold text-white'>Rp. {price.toLocaleString("id-ID", { styles: "currency", currency: "IDR" })}</span>
+      <span className='text-s font-bold text-white'>${price.toLocaleString("id-ID", { styles: "currency", currency: "IDR" })}</span>
       <Button classname='bg-blue-600' onClick={() => handleAddToCart(id)}>
         Add To Card
       </Button>

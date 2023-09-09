@@ -1,43 +1,30 @@
 import { useState, useEffect, useRef } from "react";
 import Button from "../components/Elements/Button";
 import CardProduct from "../components/Fragments/CardProduct";
-
-const products = [
-  {
-    id: 1,
-    name: "Sepatu Baru",
-    price: 999000,
-    image: "https://images.unsplash.com/photo-1693377367690-347f1d381985?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-    desc: `Lorem ipsum, dolor sit amet consectetur adipisicing elit. Dolor odio itaque sint quibusdam reiciendis aperiam.`,
-  },
-  {
-    id: 2,
-    name: "Sepatu Compas",
-    price: 600000,
-    image: "https://images.unsplash.com/photo-1693377367690-347f1d381985?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-    desc: `Lorem ipsum, dolor sit amet consectetur adipisicing elit. Dolor odio itaque sint quibusdam reiciendis aperiam.`,
-  },
-  {
-    id: 3,
-    name: "Sepatu Bots",
-    price: 750000,
-    image: "https://images.unsplash.com/photo-1693377367690-347f1d381985?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-    desc: `Lorem ipsum, dolor sit amet consectetur adipisicing elit. Dolor odio itaque sint quibusdam reiciendis aperiam.`,
-  },
-];
-
-const email = localStorage.getItem("email");
+import { getProducts } from "../services/product.service";
+import { useLogin } from "../hooks/useLogin";
 
 const ProductsPage = () => {
   const [cart, setCart] = useState([]);
   const [totalPrice, setTotalPrice] = useState(0);
+  const [products, setProducts] = useState([]);
+
+  const username = useLogin()
 
   useEffect(() => {
     setCart(JSON.parse(localStorage.getItem("cart")) || []);
   }, []);
 
+
+
   useEffect(() => {
-    if (cart.length > 0) {
+    getProducts((data) => {
+      setProducts(data);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (products.length > 0 && cart.length > 0) {
       const sum = cart.reduce((acc, item) => {
         const product = products.find((product) => product.id === item.id);
         return acc + product.price * item.qty;
@@ -45,11 +32,10 @@ const ProductsPage = () => {
       setTotalPrice(sum);
       localStorage.setItem("cart", JSON.stringify(cart));
     }
-  }, [cart]);
+  }, [cart, products]);
 
   const handleLogout = () => {
-    localStorage.removeItem("email");
-    localStorage.removeItem("password");
+    localStorage.removeItem("token");
     window.location.href = "/login";
   };
 
@@ -62,34 +48,34 @@ const ProductsPage = () => {
     }
   };
 
+  const totalPriceRef = useRef(null);
 
-  const totalPriceRef = useRef(null)
-
-  useEffect(()=> {
-    if (cart.length > 0){
-      totalPriceRef.current.style.display = "table-row"
-    }else{
-      totalPriceRef.current.style.display = "none"
+  useEffect(() => {
+    if (cart.length > 0) {
+      totalPriceRef.current.style.display = "table-row";
+    } else {
+      totalPriceRef.current.style.display = "none";
     }
-  })
+  });
 
   return (
     <>
       <div className='flex justify-end h-20 bg-blue-600 text-white items-center px-12'>
-        {email}
+        {username}
         <Button classname='ml-5 bg-black' onClick={handleLogout}>
           Logout
         </Button>
       </div>
       <div className='flex justify-center '>
         <div className='w-3/4 flex flex-wrap'>
-          {products.map((product) => (
-            <CardProduct key={product.id}>
-              <CardProduct.Header image={product.image}></CardProduct.Header>
-              <CardProduct.Body name={product.name}>{product.desc}</CardProduct.Body>
-              <CardProduct.Footer price={product.price} id={product.id} handleAddToCart={handleAddToCart} />
-            </CardProduct>
-          ))}
+          {products.length > 0 &&
+            products.map((product) => (
+              <CardProduct key={product.id}>
+                <CardProduct.Header image={product.image} id={product.id}/>
+                <CardProduct.Body name={product.title}>{product.description}</CardProduct.Body>
+                <CardProduct.Footer price={product.price} id={product.id} handleAddToCart={handleAddToCart} />
+              </CardProduct>
+            ))}
         </div>
         <div className='w-2/6'>
           <h1 className='text-3xl font-bold text-blue-600 ml-5 mb-2'>Cart</h1>
@@ -103,20 +89,25 @@ const ProductsPage = () => {
               </tr>
             </thead>
             <tbody>
-              {cart.map((item) => {
-                const product = products.find((product) => product.id === item.id);
-                return (
-                  <tr key={item.id}>
-                    <td className='p-2'>{product.name}</td>
-                    <td className='p-2'>Rp. {product.price.toLocaleString("id-ID", { styles: "currency", currency: "IDR" })}</td>
-                    <td className='p-2'>{item.qty}</td>
-                    <td className='p-2'>Rp. {(item.qty * product.price).toLocaleString("id-ID", { styles: "currency", currency: "IDR" })}</td>
-                  </tr>
-                );
-              })}
+              {products.length > 0 &&
+                cart.map((item) => {
+                  const product = products.find((product) => product.id === item.id);
+                  return (
+                    <tr key={item.id}>
+                      <td className='p-2'>{product.title.substring(0, 25)}...</td>
+                      <td className='p-2'>${product.price.toLocaleString("id-ID", { styles: "currency", currency: "USD" })}</td>
+                      <td className='p-2'>{item.qty}</td>
+                      <td className='p-2'>${(item.qty * product.price).toLocaleString("id-ID", { styles: "currency", currency: "IDR" })}</td>
+                    </tr>
+                  );
+                })}
               <tr ref={totalPriceRef}>
-                <td colSpan={3}><b>Total Price</b></td>
-                <td><b>Rp. {totalPrice.toLocaleString("id-ID", { styles: "currency", currency: "IDR" })}</b></td>
+                <td colSpan={3} className='p-2'>
+                  <b>Total Price</b>
+                </td>
+                <td className='p-2'>
+                  <b>${totalPrice.toLocaleString("id-ID", { styles: "currency", currency: "USD" })}</b>
+                </td>
               </tr>
             </tbody>
           </table>
